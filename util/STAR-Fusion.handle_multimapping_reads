@@ -159,8 +159,8 @@ main: {
                 }
 
                 if (@filter_reasons) {
-                    print $ofh_filt "#" . join("; ", @filter_reasons) . "\n";
-                    print $ofh_filt join("", @lines) . "\n";
+                    # print $ofh_filt "#" . join("; ", @filter_reasons) . "\n";
+                    # //print $ofh_filt join("", @lines) . "\n";
                 }
                 else {
                     print join("", @lines);
@@ -193,8 +193,8 @@ main: {
         }
 
         if (@filter_reasons) {
-            print $ofh_filt "#" . join("; ", @filter_reasons) . "\n";
-            print $ofh_filt join("", @lines) . "\n";
+            # print $ofh_filt "#" . join("; ", @filter_reasons) . "\n";
+            # print $ofh_filt join("", @lines) . "\n";
         }
         else {
             print join("", @lines);
