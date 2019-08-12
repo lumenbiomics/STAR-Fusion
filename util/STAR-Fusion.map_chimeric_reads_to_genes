@@ -10,6 +10,7 @@ use FindBin;
 use lib ("$FindBin::Bin/../PerlLib");
 use File::Basename;
 use Data::Dumper;
+use Parallel::ForkManager;
 use Set::IntervalTree;
 use JSON::XS;
 
@@ -96,11 +97,14 @@ main: {
         }
     }
     print STDERR "split chimeric file names @chimeric_junction_file_split_filenames\n";
-    my $idx=0;
-    foreach(@chimeric_junction_file_split_filenames) {
-        &map_chimeric_reads_to_genes($_, "$output_file$idx");
-        $idx+=1;
+    my $pm = Parallel::ForkManager->new($CPU);
+    FILES:
+    for(my $i =0 ; $i < scalar @chimeric_junction_file_split_filenames; $i++) {
+        $pm-> start and next FILES;
+        &map_chimeric_reads_to_genes($chimeric_junction_file_split_filenames[$i], "$output_file$i");
+        $pm->finish;
     }
+    $pm->wait_all_children;
     for(my $i=0;$i<$CPU;$i++){
         my $cmd = "cat $output_file$i >> $output_file";
         print STDERR "Executing $cmd \n";
