@@ -535,7 +535,6 @@ main: {
     print STDERR "Executing $dump_meta_data_to_sorted_chimeric_junctions_file Ouput: $! \n";
 
     my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file.'.temp', $CPU);
-    $chimeric_out_junctions_file = $chimeric_out_junctions_file . ".sorted";
     process_split_chimeric_files(@split_chimeric_filenames);
 
     ########################################
@@ -544,11 +543,12 @@ main: {
     my $cmd = "$UTILDIR/STAR-Fusion.map_chimeric_reads_to_genes "
         . " --genome_lib_dir $genome_lib_dir "
         . " -J $chimeric_out_junctions_file "
-        . "-CPU $CPU"
-        . "-O $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt";
+        . " --CPU $CPU"
+        . " -O $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt";
 
     $pipeliner->add_commands(new Command($cmd, "$checkpoints_dir/$out_prefix.map_chim_to_genes.ok"));
 
+    $chimeric_out_junctions_file = $chimeric_out_junctions_file . ".sorted";
 
     #############################################
     ## Filter out non-specific multimapping reads
@@ -832,7 +832,7 @@ sub process_split_chimeric_file {
 sub process_split_chimeric_files {
     my(@chimeric_junction_split_filenames) = @_;
     for(my $i=scalar @chimeric_junction_split_filenames -1 ; $i >= 1; $i--){
-        &process_split_chimeric_file($chimeric_junction_split_filenames[$i], $chimeric_junction_split_filenames[$i-1]);
+        &process_split_chimeric_file($chimeric_junction_split_filenames[$i-1], $chimeric_junction_split_filenames[$i]);
     }
 }
 

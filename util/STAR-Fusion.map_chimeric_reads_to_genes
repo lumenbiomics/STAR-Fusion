@@ -55,7 +55,7 @@ my $DEBUG;
               'chimeric_junction|J=s' => \$chimeric_junction_file,
               'genome_lib_dir=s' => \$genome_lib_dir,
               'O=s' => \$output_file,
-              'CPU=i' => \$CPU,
+	      'CPU=i' => \$CPU,
               'd' => \$DEBUG,
     );
 
@@ -82,7 +82,8 @@ my %FEATURE_TOKEN_TO_STRUCT;
 my $JSON_ENCODER = JSON::XS->new();
 
 main: {
-
+	print STDERR $CPU;
+	print STDERR $output_file;
     &build_interval_tree($ref_features_file);
     
     print STDERR "-parsing fusion evidence: $chimeric_junction_file\n";
@@ -94,10 +95,10 @@ main: {
             push(@chimeric_junction_file_split_filenames, $chimeric_junction_file . '.temp.split'.$i);
         }
     }
-    print STDERR "split chimeric file names @chimeric_junction_file_split_filenames";
+    print STDERR "split chimeric file names @chimeric_junction_file_split_filenames\n";
     my $idx=0;
     foreach(@chimeric_junction_file_split_filenames) {
-        &map_chimeric_reads_to_genes($_, $output_file.$idx);
+        &map_chimeric_reads_to_genes($_, "$output_file$idx");
         $idx+=1;
     }
     for(my $i=0;$i<$CPU;$i++){
@@ -346,7 +347,7 @@ sub map_chimeric_reads_to_genes {
     my ($junctions_file, $output_filename) = @_;
     open(my $output, ">", $output_filename) or die "Error, cannot open file: $output_filename";
 
-    print STDERR "-mapping reads to genes $junctions_file $output_file \n";
+    print STDERR "-mapping reads to genes $junctions_file $output_filename \n";
 
     
     if ($junctions_file =~ /\.gz$/) {
