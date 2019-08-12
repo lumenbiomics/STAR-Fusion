@@ -530,6 +530,9 @@ main: {
     my $sort_chimeric_out_junctions_file_cmd = "sort -k 10 -b -t'\t' ". $chimeric_out_junctions_file . ".temp > " .$chimeric_out_junctions_file .".sorted" ;
     system($sort_chimeric_out_junctions_file_cmd) ;
     print STDERR "Executing : $sort_chimeric_out_junctions_file_cmd Ouput: $! \n";
+    my $copy_sorted_chimeric_file = "cp $chimeric_out_junctions_file.sorted $chimeric_out_junctions_file.temp";
+    system($copy_sorted_chimeric_file);
+    print STDERR "Executing $copy_sorted_chimeric_file Output: $! \n";
     my $dump_meta_data_to_sorted_chimeric_junctions_file = 'tail -n2 ' . $chimeric_out_junctions_file . " >> " . $chimeric_out_junctions_file . ".sorted" ;
     system($dump_meta_data_to_sorted_chimeric_junctions_file);
     print STDERR "Executing $dump_meta_data_to_sorted_chimeric_junctions_file Ouput: $! \n";
