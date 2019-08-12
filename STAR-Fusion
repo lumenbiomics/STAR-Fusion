@@ -534,7 +534,7 @@ main: {
     system($dump_meta_data_to_sorted_chimeric_junctions_file);
     print STDERR "Executing $dump_meta_data_to_sorted_chimeric_junctions_file Ouput: $! \n";
 
-    my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file.'.temp', 4);
+    my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file.'.temp', $CPU);
     $chimeric_out_junctions_file = $chimeric_out_junctions_file . ".sorted";
     process_split_chimeric_files(@split_chimeric_filenames);
 
@@ -544,7 +544,8 @@ main: {
     my $cmd = "$UTILDIR/STAR-Fusion.map_chimeric_reads_to_genes "
         . " --genome_lib_dir $genome_lib_dir "
         . " -J $chimeric_out_junctions_file "
-        . " > $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt";
+        . "-CPU $CPU"
+        . "-O $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt";
 
     $pipeliner->add_commands(new Command($cmd, "$checkpoints_dir/$out_prefix.map_chim_to_genes.ok"));
 
