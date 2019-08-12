@@ -535,7 +535,7 @@ main: {
     print STDERR "Executing $dump_meta_data_to_sorted_chimeric_junctions_file Ouput: $! \n";
 
     $chimeric_out_junctions_file = $chimeric_out_junctions_file . ".sorted";
-    my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file);
+    my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file, 4);
     process_split_chimeric_file(@split_chimeric_filenames);
 
     ########################################
