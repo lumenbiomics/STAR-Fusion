@@ -535,6 +535,8 @@ main: {
     print STDERR "Executing $dump_meta_data_to_sorted_chimeric_junctions_file Ouput: $! \n";
 
     $chimeric_out_junctions_file = $chimeric_out_junctions_file . ".sorted";
+    my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file);
+    process_split_chimeric_file(@split_chimeric_filenames);
 
     ########################################
     ## Map chimeric reads to genome features
@@ -770,6 +772,67 @@ main: {
     
 }
 
+sub split_chimeric_junction_file {
+    my ($chimeric_junction_file) = $_[0];
+    my ($split_num) = $_[1];
+    my $split_cmd = "split -d -n$split_num -a2 $chimeric_junction_file $chimeric_junction_file.split";
+    # my $split_cmd = "split  -a2 $chimeric_junction_file $chimeric_junction_file.split";
+    my @chimeric_junction_split_filenames ;
+    system($split_cmd);
+        for(my $i =0; $i< $split_num ; $i++) {
+        if ($i < 10)
+        {
+            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'0'.$i);
+        }else{
+            push(@chimeric_junction_split_filenames,$chimeric_junction_file.$i);
+        }
+    }
+    print STDERR "Split chimeric file names @chimeric_junction_split_filenames \n";
+    return @chimeric_junction_split_filenames
+}
+
+###
+sub process_split_chimeric_file {
+    my($chimeric_junction_file_1) = $_[0];
+    my($chimeric_junction_file_2) = $_[1];
+    print STDERR "Processing $chimeric_junction_file_1, $chimeric_junction_file_2\n";
+    system("cp $chimeric_junction_file_2 $chimeric_junction_file_2.temp");
+    open(my $fh1, $chimeric_junction_file_2) or die "Error, cannot open file: $chimeric_junction_file_2";
+    my @lines;
+    my $current_read_name = "";
+    while (<$fh1>) {
+        my $line = $_;
+        chomp;
+        my @x = split(/\t/);
+        my $read_name = $x[9];
+        if ($current_read_name eq "" or $current_read_name eq $read_name ){
+            push(@lines, $line);
+            $current_read_name = $read_name;
+        }
+        else{
+            last;
+        }
+    }
+    close($fh1);
+    open(my $fh2, '>>', $chimeric_junction_file_1) or die "Error, cannot open file: $chimeric_junction_file_1";
+    foreach(@lines) {
+        print $fh2 $_;
+    }
+    close($fh2);
+    my $len = scalar @lines;
+    print STDERR "removing $len lines\n";
+    $len +=1;
+    system("tail -n +$len $chimeric_junction_file_2.temp > $chimeric_junction_file_2");
+    system("rm $chimeric_junction_file_2.temp");
+}
+
+###
+sub process_split_chimeric_files {
+    my(@chimeric_junction_split_filenames) = @_;
+    for(my $i=scalar @chimeric_junction_split_filenames -1 ; $i >= 1; $i++){
+        &process_split_chimeric_file($chimeric_junction_split_filenames[$i], $chimeric_junction_split_filenames[$i-1]);
+    }
+}
 
 ####
 sub missing_required_program_installed {
