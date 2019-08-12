@@ -782,9 +782,9 @@ sub split_chimeric_junction_file {
         for(my $i =0; $i< $split_num ; $i++) {
         if ($i < 10)
         {
-            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'0'.$i);
+            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'split0'.$i);
         }else{
-            push(@chimeric_junction_split_filenames,$chimeric_junction_file.$i);
+            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'split'.$i);
         }
     }
     print STDERR "Split chimeric file names @chimeric_junction_split_filenames \n";
