@@ -534,9 +534,9 @@ main: {
     system($dump_meta_data_to_sorted_chimeric_junctions_file);
     print STDERR "Executing $dump_meta_data_to_sorted_chimeric_junctions_file Ouput: $! \n";
 
+    my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file.'.temp', 4);
     $chimeric_out_junctions_file = $chimeric_out_junctions_file . ".sorted";
-    my @split_chimeric_filenames = split_chimeric_junction_file($chimeric_out_junctions_file.'temp', 4);
-    process_split_chimeric_file(@split_chimeric_filenames);
+    process_split_chimeric_files(@split_chimeric_filenames);
 
     ########################################
     ## Map chimeric reads to genome features
@@ -782,9 +782,9 @@ sub split_chimeric_junction_file {
         for(my $i =0; $i< $split_num ; $i++) {
         if ($i < 10)
         {
-            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'split0'.$i);
+            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'.split0'.$i);
         }else{
-            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'split'.$i);
+            push(@chimeric_junction_split_filenames,$chimeric_junction_file.'.split'.$i);
         }
     }
     print STDERR "Split chimeric file names @chimeric_junction_split_filenames \n";
@@ -821,6 +821,7 @@ sub process_split_chimeric_file {
     close($fh2);
     my $len = scalar @lines;
     print STDERR "removing $len lines\n";
+    print STDERR @lines;
     $len +=1;
     system("tail -n +$len $chimeric_junction_file_2.temp > $chimeric_junction_file_2");
     system("rm $chimeric_junction_file_2.temp");
@@ -829,7 +830,7 @@ sub process_split_chimeric_file {
 ###
 sub process_split_chimeric_files {
     my(@chimeric_junction_split_filenames) = @_;
-    for(my $i=scalar @chimeric_junction_split_filenames -1 ; $i >= 1; $i++){
+    for(my $i=scalar @chimeric_junction_split_filenames -1 ; $i >= 1; $i--){
         &process_split_chimeric_file($chimeric_junction_split_filenames[$i], $chimeric_junction_split_filenames[$i-1]);
     }
 }
