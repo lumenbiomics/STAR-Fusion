@@ -780,7 +780,7 @@ main: {
 sub split_chimeric_junction_file {
     my ($chimeric_junction_file) = $_[0];
     my ($split_num) = $_[1];
-    my $split_cmd = "split -d -n$split_num -a2 $chimeric_junction_file $chimeric_junction_file.split";
+    my $split_cmd = "split -d -n$split_num -a2 --parallel=$split_num $chimeric_junction_file $chimeric_junction_file.split";
     # my $split_cmd = "split  -a2 $chimeric_junction_file $chimeric_junction_file.split";
     my @chimeric_junction_split_filenames ;
     system($split_cmd);
