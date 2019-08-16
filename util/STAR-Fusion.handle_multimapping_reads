@@ -147,7 +147,7 @@ main: {
 
 sub handle_multimapping_reads {
     my ($junctions_file, $output_filename) = @_;
-    print STDERR "processing $junctions_file to $output_filename";
+    print STDERR "processing $junctions_file to $output_filename\n";
     open(my $fh, $junctions_file) or die "Error, cannot open file: $junctions_file";
     open(my $output, ">", $output_filename) or die "Error, cannot open file: $output_filename";
     my @lines;
