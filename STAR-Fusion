@@ -558,10 +558,11 @@ main: {
 
     $cmd = "$UTILDIR/STAR-Fusion.handle_multimapping_reads "
         . " -J $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt "
+        . " --CPU $CPU"
         . " --genome_lib_dir $genome_lib_dir "
         . " -M $MIN_PCT_MM_NONSPECIFIC "
         . " --filt_file $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt.fail "
-        . " > $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt.pass ";
+        . " -O  $preliminary_outdir/star-fusion.junction_breakpts_to_genes.txt.pass ";
     
     $pipeliner->add_commands(new Command($cmd, "$checkpoints_dir/$out_prefix.handle_multimappers.ok"));
     

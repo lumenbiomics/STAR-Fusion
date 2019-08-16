@@ -13,6 +13,7 @@ use Set::IntervalTree;
 use JSON::XS;
 use TiedHash;
 use Gene_overlap_check;
+use Parallel::ForkManager;
 require "cigar_parser.ph";
 
 
@@ -28,6 +29,8 @@ my $MIN_MM_HOMOLOGY_CONGRUENCE = 50;
 my $MAX_PCT_LOCUS_OVERLAP = 50;
 
 my $genome_lib_dir;
+my $CPU;
+my $final_output_file;
 
 my $LONG_ANCHOR_SIZE = 25;
 
@@ -46,6 +49,8 @@ Removes chimeric reads that have the following properties:
 #  Required:
 #
 #    --annotated_junctions|J <string>     annotated junctions file, chimeric reads mapped to genes
+#
+#    --CPU                                number of CPU to use
 #
 #    --genome_lib_dir <string>            CTAT genome lib dir
 #
@@ -73,6 +78,8 @@ my $filt_file;
 &GetOptions ( 'h' => \$help_flag,
               
               'annotated_junctions|J=s' => \$chimeric_junction_file,
+    	      'CPU=i' => \$CPU,
+              'O=s' => \$final_output_file,
               'min_pct_MM_nonspecific|M=i' => \$min_pct_multimapping_to_genes,
               'filt_file=s' => \$filt_file,
               'genome_lib_dir=s' => \$genome_lib_dir,
@@ -119,12 +126,34 @@ else {
 my $JSON_DECODER = JSON::XS->new();
 
 main: {
-    open(my $ofh_filt, ">$filt_file") or die "Error, cannot write to $filt_file";
     print STDERR "-parsing $chimeric_junction_file, organizing read mapping info.\n";
-    open(my $fh, $chimeric_junction_file) or die "Error, cannot open file: $chimeric_junction_file";
+    my $pm = Parallel::ForkManager->new($CPU);
+    FILES:
+    for(my $i =0 ; $i < $CPU; $i++) {
+        $pm-> start and next FILES;
+        &handle_multimapping_reads("$chimeric_junction_file$i", "$final_output_file$i");
+        $pm->finish;
+    }
+    $pm->wait_all_children;
+    for(my $i=0;$i<$CPU;$i++){
+        my $cmd = "cat $final_output_file$i >> $final_output_file";
+        print STDERR "Executing $cmd \n";
+        system($cmd);
+    }
+    exit(0);
+
+}
+
+
+sub handle_multimapping_reads {
+    my ($junctions_file, $output_filename) = @_;
+    print STDERR "processing $junctions_file to $output_filename";
+    open(my $fh, $junctions_file) or die "Error, cannot open file: $junctions_file";
+    open(my $output, ">", $output_filename) or die "Error, cannot open file: $output_filename";
     my @lines;
     my $current_read_name = "";
     my $file_completed = 0;
+
     while ($file_completed != 1) {
         $file_completed = 1;
         while (<$fh>) {
@@ -163,7 +192,7 @@ main: {
                     # //print $ofh_filt join("", @lines) . "\n";
                 }
                 else {
-                    print join("", @lines);
+                    print $output join("", @lines);
                 }
                 @lines = ($line);
                 $current_read_name = $read_name;
@@ -197,15 +226,14 @@ main: {
             # print $ofh_filt join("", @lines) . "\n";
         }
         else {
-            print join("", @lines);
+            print $output join("", @lines);
         }
 
     }
-
+    close $output;
     close $fh;
-    exit(0);
-
 }
+
 
 ####
 sub compute_pct_alns_mapping_to_gene_pairs {
