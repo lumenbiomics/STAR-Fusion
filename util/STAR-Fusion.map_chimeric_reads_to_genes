@@ -10,6 +10,7 @@ use FindBin;
 use lib ("$FindBin::Bin/../PerlLib");
 use File::Basename;
 use Data::Dumper;
+use Parallel::ForkManager;
 use Set::IntervalTree;
 use JSON::XS;
 
@@ -22,6 +23,8 @@ my $out_prefix = "star-fusion";
 my $chimeric_junction_file;
 my $help_flag;
 my $genome_lib_dir;
+my $output_file;
+my $CPU;
 
 
 my $LONG_ANCHOR_SIZE = 25;
@@ -34,7 +37,9 @@ my $usage = <<__EOUSAGE__;
 #
 #    --chimeric_junction|J <string>     Chimeric.out.junction file
 #
-#    --genome_lib_dir <string>          path to genome lib dir 
+#    --genome_lib_dir <string>          path to genome lib dir
+#
+#    --CPU                              number of CPU to use
 #
 ###################################################################################
 
@@ -50,7 +55,8 @@ my $DEBUG;
               
               'chimeric_junction|J=s' => \$chimeric_junction_file,
               'genome_lib_dir=s' => \$genome_lib_dir,
-              
+              'O=s' => \$output_file,
+	      'CPU=i' => \$CPU,
               'd' => \$DEBUG,
     );
 
@@ -77,12 +83,33 @@ my %FEATURE_TOKEN_TO_STRUCT;
 my $JSON_ENCODER = JSON::XS->new();
 
 main: {
-
+	print STDERR $CPU;
+	print STDERR $output_file;
     &build_interval_tree($ref_features_file);
     
     print STDERR "-parsing fusion evidence: $chimeric_junction_file\n";
-    &map_chimeric_reads_to_genes($chimeric_junction_file);
-    
+    my @chimeric_junction_file_split_filenames;
+    for(my $i=0;$i<$CPU;$i++){
+        if($i<10) {
+            push(@chimeric_junction_file_split_filenames, $chimeric_junction_file . '.temp.split0'.$i);
+        }else{
+            push(@chimeric_junction_file_split_filenames, $chimeric_junction_file . '.temp.split'.$i);
+        }
+    }
+    print STDERR "split chimeric file names @chimeric_junction_file_split_filenames\n";
+    my $pm = Parallel::ForkManager->new($CPU);
+    FILES:
+    for(my $i =0 ; $i < scalar @chimeric_junction_file_split_filenames; $i++) {
+        $pm-> start and next FILES;
+        &map_chimeric_reads_to_genes($chimeric_junction_file_split_filenames[$i], "$output_file$i");
+        $pm->finish;
+    }
+    $pm->wait_all_children;
+    for(my $i=0;$i<$CPU;$i++){
+        my $cmd = "cat $output_file$i >> $output_file";
+        print STDERR "Executing $cmd \n";
+        system($cmd);
+    }
     exit(0);
 
     
@@ -321,9 +348,10 @@ sub get_overlapping_features {
 
 ####
 sub map_chimeric_reads_to_genes {
-    my ($junctions_file) = @_;
-    
-    print STDERR "-mapping reads to genes\n";
+    my ($junctions_file, $output_filename) = @_;
+    open(my $output, ">", $output_filename) or die "Error, cannot open file: $output_filename";
+
+    print STDERR "-mapping reads to genes $junctions_file $output_filename \n";
 
     
     if ($junctions_file =~ /\.gz$/) {
@@ -412,9 +440,9 @@ sub map_chimeric_reads_to_genes {
             push (@x, ".");
         }
     
-        print join("\t", @x) . "\n";
+        print $output join("\t", @x) . "\n";
     }
-        
+    close($output);
     return;
     
 }
